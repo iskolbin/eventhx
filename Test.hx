@@ -20,21 +20,32 @@ class TestObj
 		this.name = name;
 	}
 	
+	static function strStatus( status: EventStatus ) return switch( status ) {
+		case Processed: "Processed";
+		case Queued: "Queued";
+	}
+
 	public function onEvent( s: EventSource<TestEvent>, e: TestEvent ) {
 		switch( e ) {
 			case First(srcname): 
 				trace( 'first: "${srcname}", processed by: "${name}"' );
-				emit( Second(42));
+				trace( "start emit(Second(42))" ); 
+				trace( strStatus( emit(Second(42))));
+				trace( "end emit(Second(42))" );
 			case Second(value):
 				trace( 'second: "${value}", processed by: "${name}"' );
-				emit( Third(14.15));
+				trace( "start emit(Third(14.15))" );
+				trace( strStatus( emit(Third(14.15))));
+				trace( "end emit(Third(14.15))" );
 			case Third(v):
 				trace( 'third: "${v}", processed by: "${name}"' );
 		} 
 	}	
 
 	public function send() {
-		emit( First(name));
+		trace( 'start emit(First($name))' );
+		trace( strStatus( emit(First(name))));
+		trace( 'end emit(First($name))' );
 	}
 }
 
