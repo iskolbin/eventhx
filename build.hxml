@@ -1,0 +1,3 @@
+-main Test.hx
+-js Out.js
+-cmd node Out.js

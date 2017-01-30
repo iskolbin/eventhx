@@ -1,5 +1,10 @@
 package nook.event;
 
+@:enum abstract EventStatus(Int) {
+	var Processed = 0;
+	var Queued = 1;
+}
+
 class EventTools {
 	public static function addListener<T>( s: EventSource<T>, l: EventListener<T> ) {
 		if ( s.listeners.indexOf( l ) < 0 ) {
@@ -11,41 +16,30 @@ class EventTools {
 	}
 
 	public static function removeListener<T>( s: EventSource<T>, l: EventListener<T> ) {
-		var index = s.listeners.indexOf( l );
-		if ( index >= 0 ) {
-			s.listeners.splice( index, 1 );
-			return true;
-		} else {
-			return false;
-		}
+		return s.listeners.remove( l );
 	}
 
-	public static function emitAsync<T>( s: EventSource<T>, event: T ) {
+	public static function notify<T>( s: EventSource<T>, event: T ) {
 		for ( l in s.listeners ) {
 			l.onEvent( s, event );
 		}
 	}
 
-	public static var locked(default,null) = false;
-	static var emitQueue = new Array<Void->Void>();
+	static var messageQueue = new Array<Void->Void>();
 
-	public static function emit<T>( s: EventSource<T>, event: T ) {
-		if ( !locked ) {
-			locked = true;
-			emit( s, event );
-			
+	public static function emit<T>( s: EventSource<T>, event: T ): EventStatus {
+		if ( messageQueue.length == 0 ) {
+			messageQueue.push( null );
+			notify( s, event );
 			var i = 0;
-			while ( i < emitQueue.length ) {
-				emitQueue[i]();
-				i += 1;
+			while ( ++i < messageQueue.length ) {
+				messageQueue[i]();
 			}
-
-			if ( emitQueue.length > 0 ) {
-				emitQueue = [];
-			}
-			locked = false;
+			messageQueue.splice( 0, messageQueue.length );
+			return Processed;
 		} else {
-			emitQueue.push( function() emitAsync( s, event ));
+			messageQueue.push( function() notify( s, event ));
+			return Queued;
 		}
 	}
 }
